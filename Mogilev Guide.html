@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Mogilev Guide | Архитектура и места Могилёва</title>
+  <!-- Яндекс Карты API -->
+  <script src="https://api-maps.yandex.ru/2.1/?apikey=ваш-ключ&lang=ru_RU"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -50,7 +52,7 @@
     .cards-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem; margin-bottom: 3.5rem;
+      gap: 2rem; margin-bottom: 3rem;
     }
 
     .card { background: transparent; perspective: 1200px; cursor: pointer; }
@@ -85,11 +87,37 @@
       z-index: 2; text-indent: -9999px; overflow: hidden;
     }
 
-    /* Detail section */
+    .map-bottom {
+      margin-bottom: 2.5rem;
+    }
+    .map-title {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      color: #3f2c1a;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    #yandex-map {
+      width: 100%;
+      height: 500px;
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      border: 2px solid #c2a15b;
+      overflow: hidden;
+    }
+    .map-caption {
+      text-align: center;
+      font-size: 0.75rem;
+      color: #6b5a48;
+      margin-top: 0.5rem;
+    }
+
     .detail-section {
       background: rgba(30,22,16,0.78); backdrop-filter: blur(16px);
       border-radius: 48px; padding: 2rem;
       border: 1px solid rgba(255,235,200,0.4);
+      margin-top: 2rem;
     }
 
     .detail-content { display: none; animation: fadeSlideUp 0.45s ease forwards; }
@@ -108,9 +136,7 @@
       display: inline-block; border-left: 3px solid #c2a15b; padding-left: 0.8rem;
     }
     .detail-text p { margin: 0.8rem 0; color: #faf0e0; line-height: 1.55; }
-    .address { margin-top: 0.5rem; font-size: 0.95rem; color: #ffefcf; background: rgba(0,0,0,0.3); display: inline-block; padding: 0.2rem 0.8rem; border-radius: 40px; }
 
-    /* Images grid */
     .detail-images {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -123,6 +149,12 @@
       border: 1px solid rgba(255,215,140,0.3);
       background: rgba(0,0,0,0.25);
       display: block;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    .detail-images img:hover {
+      transform: scale(1.02);
+      opacity: 0.9;
     }
 
     @keyframes fadeSlideUp {
@@ -147,6 +179,10 @@
     body:has(#detail-ploshchad-slavy:target) { background: linear-gradient(125deg, #c2b9a2, #a08962); }
     body:has(#detail-museum-romanov:target)  { background: linear-gradient(135deg, #cdc1aa, #9e8663); }
     body:has(#detail-triumphal-arch:target)  { background: linear-gradient(125deg, #d6cfb8, #b29775); }
+    body:has(#detail-dama:target)          { background: linear-gradient(140deg, #dfd5c5, #b89a74); }
+    body:has(#detail-pushkin:target)       { background: linear-gradient(135deg, #d2e0c6, #b3c7a0); }
+    body:has(#detail-attractions:target)   { background: linear-gradient(140deg, #f0e4c8, #d8b87a); }
+    body:has(#detail-svyatoe-lake:target)  { background: linear-gradient(130deg, #b3dee2, #6fa3b5); }
     body:not(:has(:target))                { background: #f3efe7; }
 
     .reset-btn {
@@ -169,6 +205,31 @@
       .card-inner { height: 270px; }
       .detail-section { padding: 1.5rem; }
       .detail-images img { height: 180px; }
+      #yandex-map { height: 350px; }
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.95);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active { display: flex; }
+    .modal img { max-width: 90%; max-height: 90%; object-fit: contain; border-radius: 8px; }
+    .modal-close {
+      position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer;
+    }
+    .modal-close:hover { color: #c2a15b; }
+    .modal-caption {
+      position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #fff;
+      background: rgba(0,0,0,0.6); padding: 8px; font-size: 14px;
     }
   </style>
 </head>
@@ -179,13 +240,14 @@
     <p>История, архитектура и душа города на Днепре</p>
   </div>
 
+  <!-- КАРТОЧКИ -->
   <div class="cards-grid">
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Ратуша</h3><div class="style-badge">Барокко • XVII век</div></div><div class="card-back"><p>⭐ Символ Могилёва</p><p>⭐ Смотровая площадка</p><p>⭐ Музей истории</p></div><a href="#detail-ratusha" class="card-link"></a></div></div>
-    <div class="card"><div class="card-inner"><div class="card-front"><h3>Собор Трёх Святителей</h3><div class="style-badge">Неорусский стиль • 1903</div></div><div class="card-back"><p>🕯️ Фарфоровый иконостас</p><p>🕯️ Мозаичные панно</p><p>🕯️ Уникальные росписи</p></div><a href="#detail-sobor" class="card-link"></a></div></div>
-    <div class="card"><div class="card-inner"><div class="card-front"><h3>Музей Масленникова</h3><div class="style-badge">Классицизм • XVIII век</div></div><div class="card-back"><p>🎨 Художественный музей</p><p>🎨 Коллекция икон</p><p>🎨 На купюре 200 руб.</p></div><a href="#detail-dvorec" class="card-link"></a></div></div>
-    <div class="card"><div class="card-inner"><div class="card-front"><h3>Драмтеатр</h3><div class="style-badge">Конструктивизм • 1930-е</div></div><div class="card-back"><p>🎬 Авансцена</p><p>🎬 Акустическая раковина</p><p>🎬 Памятник авангарда</p></div><a href="#detail-theatre" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Собор Трёх Святителей</h3><div class="style-badge">Неорусский стиль • 1913</div></div><div class="card-back"><p>🕯️ Фарфоровый иконостас</p><p>🕯️ Мозаичные панно</p><p>🕯️ Уникальные росписи</p></div><a href="#detail-sobor" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Музей Масленникова</h3><div class="style-badge">Модерн / Псевдорусский / Классицизм</div></div><div class="card-back"><p>🎨 Художественный музей</p><p>🎨 Коллекция икон</p><p>🎨 На купюре 200 руб.</p></div><a href="#detail-dvorec" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Драмтеатр</h3><div class="style-badge">Конструктивизм • 1888 </div></div><div class="card-back"><p>🎬 Авансцена</p><p>🎬 Акустическая раковина</p><p>🎬 Памятник авангарда</p></div><a href="#detail-theatre" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Костел Св. Станислава</h3><div class="style-badge">Барокко • 1738–1752</div></div><div class="card-back"><p>🌿 Органные концерты</p><p>🌿 Лепнина и фрески</p><p>🌿 Старейший костёл</p></div><a href="#detail-kostel" class="card-link"></a></div></div>
-    <div class="card"><div class="card-inner"><div class="card-front"><h3>Вокзал Могилёв</h3><div class="style-badge">Сталинский ампир • 1950-е</div></div><div class="card-back"><p>🎫 Главные ворота</p><p>🎫 Высокие шпили</p><p>🎫 Мозаичное панно</p></div><a href="#detail-vokzal" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Вокзал Могилёв</h3><div class="style-badge">Эклектика • 1902</div></div><div class="card-back"><p>🎫 Главные ворота</p><p>🎫 Высокие шпили</p><p>🎫 Мозаичное панно</p></div><a href="#detail-vokzal" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>ТЦ «Атриум»</h3><div class="style-badge">Современная архитектура</div></div><div class="card-back"><p>🛍️ Световой купол</p><p>🛍️ Зоны отдыха</p><p>🛍️ Городское пространство</p></div><a href="#detail-atrium" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Статуя «Звездочёт»</h3><div class="style-badge">Современная скульптура</div></div><div class="card-back"><p>✨ Символ мечты</p><p>✨ Место желаний</p><p>✨ Арт-объект</p></div><a href="#detail-zvezdochet" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Парк «Подниколье»</h3><div class="style-badge">Ландшафтный парк</div></div><div class="card-back"><p>🏞️ Вид на Днепр</p><p>🏞️ Аллеи и велодорожки</p><p>🏞️ Природный оазис</p></div><a href="#detail-podnikolie" class="card-link"></a></div></div>
@@ -196,10 +258,21 @@
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Площадь Славы</h3><div class="style-badge">Мемориал • Вечный огонь</div></div><div class="card-back"><p>🎖️ Память героев</p><p>🎖️ Курган Славы</p><p>🎖️ Место поклонения</p></div><a href="#detail-ploshchad-slavy" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Музей Романова</h3><div class="style-badge">Краеведческий музей</div></div><div class="card-back"><p>📜 История края</p><p>📜 Археология</p><p>📜 Уникальные экспонаты</p></div><a href="#detail-museum-romanov" class="card-link"></a></div></div>
     <div class="card"><div class="card-inner"><div class="card-front"><h3>Триумфальная арка</h3><div class="style-badge">Неоклассицизм • 2018</div></div><div class="card-back"><p>🏛️ Символ Победы</p><p>🏛️ Въездные ворота</p><p>🏛️ Архитектурный акцент</p></div><a href="#detail-triumphal-arch" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Дама с собачкой</h3><div class="style-badge">Скульптура • XXI век</div></div><div class="card-back"><p>📸 Самая фотографируемая</p><p>📸 У драмтеатра</p><p>📸 Городской символ</p></div><a href="#detail-dama" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Пушкин + Кот учёный</h3><div class="style-badge">Скульптура</div></div><div class="card-back"><p>📖 А.С. Пушкин</p><p>🐱 Кот учёный на цепи</p><p>⭐ Новая достопримечательность</p></div><a href="#detail-pushkin" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Парк аттракционов</h3><div class="style-badge">Семейный отдых</div></div><div class="card-back"><p>🎢 Американские горки</p><p>🎠 Карусели и автодром</p><p>🍭 Детские площадки</p></div><a href="#detail-attractions" class="card-link"></a></div></div>
+    <div class="card"><div class="card-inner"><div class="card-front"><h3>Святое озеро (пляж)</h3><div class="style-badge">Пляж • Зона отдыха</div></div><div class="card-back"><p>🏊 Песчаный пляж</p><p>☀️ Летний отдых</p><p>🌳 Живописная природа</p></div><a href="#detail-svyatoe-lake" class="card-link"></a></div></div>
   </div>
 
-  <div class="detail-section">
+  <!-- КАРТА -->
+  <div class="map-bottom">
+    <div class="map-title">🗺️ <strong>Карта Могилёва — все достопримечательности</strong></div>
+    <div id="yandex-map"></div>
+    <div class="map-caption">📍 Клик по метке на карте → откроется описание места</div>
+  </div>
 
+  <!-- ДЕТАЛЬНАЯ СЕКЦИЯ -->
+  <div class="detail-section">
     <div id="default-detail" class="detail-content">
       <div class="detail-card">
         <div class="detail-text">
@@ -207,303 +280,117 @@
           <div class="sub">Город на семи холмах, культурное сердце Поднепровья</div>
           <p>Могилёв — один из древнейших городов Беларуси, основанный ещё в XIII веке. Здесь уживаются барочные костёлы, сталинский ампир, конструктивизм и современные общественные пространства.</p>
           <p>Выберите карточку — появится описание с фотографиями и фон страницы изменится, погружая вас в атмосферу места.</p>
+          <p>📸 <strong>Совет:</strong> Нажмите на любую фотографию, чтобы открыть её в полноэкранном режиме.</p>
         </div>
       </div>
     </div>
-
-    <!-- Ратуша -->
-    <div id="detail-ratusha" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Могилёвская Ратуша</h2>
-          <div class="sub">Барокко • 1679 год • Магдебургское право (1577)</div>
-          <p>Символ независимости и самоуправления. Магдебургское право было даровано городу в 1577 году королём Стефаном Баторием. Восстановленная ратуша имеет выоту 47 метров вместе со шпилем. В ней расположен музей истории Могилёва. Со смотровой площадки открывается панорама на Днепр и историческую застройку.</p>
-          <p>Построена в 1679 году, разрушена в XX веке и отстроена заново в 2008-м.</p>
-          <div class="address">📍 Адрес: ул. Ленинская, 1А</div>
-          <div class="detail-images">
-            <img src="https://belarustourist.by/upload/resize_cache/iblock/d76/848_502_2/d768edb3bc13e84d43d81542bd29ff40.jpg" alt="Ратуша Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Собор Трёх Святителей -->
-    <div id="detail-sobor" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Собор Трёх Святителей</h2>
-          <div class="sub">Неорусский стиль • 1903–1914</div>
-          <p>Величественный собор освящён в честь трёх Вселенских учителей и святителей: Василия Великого, Григория Богослова и Иоанна Златоуста. Внутри — Пятиярусный деревянный иконостас, богато декорированный резьбой, является центральным элементом внутреннего пространства. Храм был построен в архитектурных чертах Могилевской архитектурной школы 17 века и ретроспективного русского направления, с употреблением элементов кирпичного стиля. Интересно то, что до настоящего времени сохранился оригинальный керамический пол храма.</p>
-          <div class="address">📍 Адрес: ул. Первомайская, 75А</div>
-          <div class="detail-images">
-            <img src="http://sobormogilev.by/wp-content/uploads/2024/12/IMG_7642-768x1024.jpeg" alt="Собор Трёх Святителей" loading="lazy">
-            <img src="https://avatars.mds.yandex.net/get-altay/1363018/2a000001642ab5792312b5051caf79cd9b0a/L_height" alt="Собор Трёх Святителей фасад" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Музей Масленникова -->
-    <div id="detail-dvorec" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Художественный музей имени Масленникова</h2>
-          <div class="sub">Архиерейский дворец • Классицизм • конец XVIII века</div>
-          <p>Бывшая резиденция архиепископов, а ныне — главный художественный музей Могилёвщины. В коллекции — более 6 300 произведений: иконопись XVII–XIX веков, живопись, графика и белорусский авангард.</p>
-          <p><strong>Интересный факт:</strong> здание музея изображено на белорусской купюре номиналом 200 рублей — это одна из главных достопримечательностей страны на национальных деньгах.</p>
-          <div class="address">📍 Адрес: ул. Миронова, 33</div>
-          <div class="detail-images">
-            <img src="https://media.magilev.by/gROwAAAAAACpzSBDhUY/photo.webp" alt="Музей Масленникова фасад" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-	<!-- Драмтеатр -->
-<div id="detail-theatre" class="detail-content">
-  <div class="detail-card">
-    <div class="detail-text">
-      <h2>Могилёвский областной драмтеатр</h2>
-      <div class="sub">Конструктивизм • 1930-е годы</div>
-      <p>Ярчайший пример авангардной архитектуры в Беларуси. Здание с уникальной авансценой и акустической раковиной спроектировано в духе позднего конструктивизма. На этой сцене в 1941 году выступали фронтовые бригады.</p>
-      <p>После реставрации театр обрёл первоначальный облик. Сегодня здесь ставят классику и современные спектакли, а перед входом гостей встречает изящная скульптура «Дама с собачкой» — одна из любимых могилёвских достопримечательностей, которую обязательно фотографируют туристы.</p>
-      <div class="address">📍 Адрес: ул. Первомайская, 7</div>
-      <div class="detail-images">
-        <img src="https://img.belta.by/images/storage/news/with_archive/2020/000027_1583994665_382947_big.jpg" alt="Драмтеатр Могилёв" loading="lazy">
-        <img src="https://vetliva.ru/upload/resize_cache/iblock/0d3/630_350_2/0d38efebcb0147ed7f201457495a32ed.jpg" alt="Драмтеатр Могилёв фасад" loading="lazy">
-        <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/9e/14/91/caption.jpg" alt="Скульптура Дама с собачкой у драмтеатра" loading="lazy">
-      </div>
-    </div>
-  </div>
-  <a href="#" class="reset-btn">← Ко всем местам</a>
-</div>
-
-    <!-- Костел Св. Станислава -->
-    <div id="detail-kostel" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Костел Святого Станислава</h2>
-          <div class="sub">Виленское барокко • 1738–1752</div>
-          <p>Старейший католический храм Могилёва, подлинный шедевр виленского барокко. Барочные алтари, лепнина, фрески и скульптуры создают гармоничное пространство. Органные концерты привлекают ценителей классической музыки со всей страны.</p>
-          <p>Костел пережил пожар и закрытие при советской власти, но вновь распахнул двери в 1990-х.</p>
-          <div class="address">📍 Адрес: ул. Комсомольская, 4</div>
-          <div class="detail-images">
-            <img src="https://planetabelarus.by/upload/resize_cache/iblock/2ac/1330_887_18e21fe612b4afb807a26ecc22279a1d9/2ac1b92a8d074f7e304b8da2bd8b165c.jpg" alt="Костел Святого Станислава" loading="lazy">
-            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/29/cb/98/f1/caption.jpg?w=900&h=500&s=1" alt="Костел Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Вокзал -->
-    <div id="detail-vokzal" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Железнодорожный вокзал Могилёва</h2>
-          <div class="sub">Сталинский ампир • 1950-е годы</div>
-          <p>Главные ворота города и историко-культурный памятник архитектуры начала XX века, расположенный по адресу: Привокзальная площадь. Здание сочетает черты неоклассицизма и модерна, а также является главным транспортным узлом города.</p>
-          <div class="address">📍 Адрес: Привокзальная площадь, 1</div>
-          <div class="detail-images">
-            <img src="https://mogilove.by/wp-content/uploads/2023/11/vokzal_01.jpg" alt="Вокзал Могилёв" loading="lazy">
-            <img src="https://mogilev.biz/netcat_files/2698/3645/15_v_sc.png" alt="Вокзал Могилёв статуя" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Атриум -->
-    <div id="detail-atrium" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Торговый центр «Атриум»</h2>
-          <div class="sub">Современная архитектура • Световой купол</div>
-          <p>Одно из самых популярных общественных пространств в центре Могилёва. Гигантский стеклянный купол заливает галереи естественным светом. Магазины, фуд-корт, кинотеатр и зоны отдыха.</p>
-          <p>Прилегающая площадь украшена современным фонтаном, который дарит прохладу в летний зной и создаёт праздничную атмосферу. Современный фонтанный комплекс у ТЦ «Атриум» стал новым центром притяжения: тактильные инсталляции, зоны отдыха. Здесь проходят концерты по случаям различных праздников.</p>
-          <div class="address">📍 Адрес: ул. Ленинская, 55</div>
-          <div class="detail-images">
-            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1a/bf/53/c0/caption.jpg?w=900&h=500&s=1" alt="Атриум Могилёв" loading="lazy">
-            <img src="https://linzomatik.by/wp-content/uploads/2021/07/img_1670_compressed.jpg" alt="Атриум Могилёв интерьер" loading="lazy">
-            <img src="https://media.magilev.by/gXTAAAAAAADesUVQA8A/photo.webp" alt="Фонтан у ТЦ Атриум" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Звездочёт -->
-    <div id="detail-zvezdochet" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Статуя «Звездочёт»</h2>
-          <div class="sub">Современная скульптура • символ мечты</div>
-          <p>Бронзовый астроном в старинном плаще всматривается в небо через подзорную трубу на пешеходной Ленинской — символ стремления к знаниям. Говорят, если потереть трубу и загадать желание, оно сбудется.</p>
-          <div class="address">📍 Адрес: ул. Ленинская (пешеходная зона)</div>
-          <div class="detail-images">
-            <img src="https://upload.wikimedia.org/wikipedia/ru/4/4e/%D0%9F%D0%B0%D0%BC%D1%8F%D1%82%D0%BD%D0%B8%D0%BA_%D0%97%D0%B2%D0%B5%D0%B7%D0%B4%D0%BE%D1%87%D1%91%D1%82%D1%83_%D0%B2_%D0%9C%D0%BE%D0%B3%D0%B8%D0%BB%D1%91%D0%B2%D0%B5.JPG" alt="Звездочёт Могилёв" loading="lazy">
-            <img src="https://storage.yandexcloud.net/storage.yasno.media/nat-geo/images/2022/5/13/6cdd6dd98b2740a6a243aa62824341f3.max-2500x1500.jpg" alt="Звездочёт скульптура" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-	<!-- Подниколье -->
-<div id="detail-podnikolie" class="detail-content">
-  <div class="detail-card">
-    <div class="detail-text">
-      <h2>Парк «Подниколье»</h2>
-      <div class="sub">Ландшафтный парк • Набережная Днепра</div>
-      <p>Покровский посад, более известный в народе как Подниколье, некогда богатый и густонаселённый район города. Это одно из самых древних поселений в Могилеве, известно с 11 века. С 16 века — это одно из богатейших городских поселений. Живописный парк в пойме Днепра — идеальное место для прогулок, бега и езды на велосипеде. У спуска открываются отличные виды на реку и холмы Могилёва. В парке высажены саженцы сибирской и канадской сосны, липы, туи, появились рябиновые и кленовые аллеи, разнообразные кустарники. В центре лестничных пролетов каскадом спускается главный фонтан, а у подножия расходится в две стороны, в два небольших фонтана.</p>
-      <p>Здесь же расположен Свято-Никольский монастырь — единственный памятник старины, уцелевший на территории бывшего Покровского посада. Прочие культовые строения Подниколья были разрушены в 1930-1950-е гг.</p>
-      <p>Здесь проводятся городские праздники и фестивали.</p>
-      <div class="address">📍 Адрес: ул. Якубовского, 43 (вдоль Днепра)</div>
-      <div class="detail-images">
-        <img src="https://mogilev.gov.by/images/stories/tour/attractions/Podnikole01.jpg" alt="Парк Подниколье" loading="lazy">
-        <img src="http://vestnikmogileva.by/wp-content/uploads/2020/10/dji_0014.jpg" alt="Подниколье аэрофото" loading="lazy">
-        <img src="https://mogilove.by/wp-content/uploads/2023/11/svyato-nikolskij-monastyr-4-ed.jpg" alt="Свято-Никольский монастырь в Подниколье" loading="lazy">
-      </div>
-    </div>
-  </div>
-  <a href="#" class="reset-btn">← Ко всем местам</a>
-</div>
-
-    <!-- Ленинская пешеходная -->
-    <div id="detail-leninskaya" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Улица Ленинская</h2>
-          <div class="sub">Главная пешеходная артерия • XIX–XX века</div>
-          <p>Улица Ленинская — одна из старейших пешеходных улиц Могилёва протяженностью около 1,5 км. Центральная пешеходная улица с кафе, магазинами, музыкантами и арт-объектами. Старинные здания с лепниной. Обязательно найдите «Звездочёта».</p>
-          <p>Вечером улица преображается в мягкой подсветке гирлянд.</p>
-          <div class="address">📍 Адрес: ул. Ленинская</div>
-          <div class="detail-images">
-            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/51/08/76/caption.jpg?w=1200&h=1200&s=1" alt="Улица Ленинская Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Памятник Ленину -->
-    <div id="detail-lenin-statue" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Памятник Ленину на площади Ленина</h2>
-          <div class="sub">Монумент • 1950-е • Высота 11 метров</div>
-          <p>Один из самых узнаваемых монументов Могилёва, установленный перед облисполкомом. Монумент был торжественно открыт в 1957 году. Вместе с постаментом достигает 11 метров. Площадь Ленина — место парадов и городских торжеств.</p>
-          <p><strong>Исторический факт:</strong> в конце 1930-х годов существовал проект переноса столицы БССР из Минска в Могилёв, что подчёркивает стратегическое значение города.</p>
-          <div class="address">📍 Адрес: площадь Ленина</div>
-          <div class="detail-images">
-            <img src="https://welcometobelarus.ru/images/thumbs/8406/1.jpg" alt="Памятник Ленину Могилёв" loading="lazy">
-            <img src="https://avatars.mds.yandex.net/get-altay/2402012/2a00000172dfebe201f5eb6d58671951ed9f/L_height" alt="Площадь Ленина Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Фонтаны -->
-    <div id="detail-fontany" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Фонтаны Могилёва</h2>
-          <div class="sub">Водная симфония города • XX–XXI века</div>
-          <p>Могилёв по праву гордится своими фонтанами — от элегантных классических до ультрасовременных светомузыкальных. Главный каскадный фонтан по улице Первомайской вечером превращается в захватывающее шоу с разноцветной подсветкой и динамической сменой струй. В летние выходные здесь проходят музыкальные перформансы, притягивающие горожан и гостей.</p>
-          <p>Множество фонтанов также расположены вблизи статуи "Звездочёт", на лестнице, спуск по которой ведёт в парк в Подниколье и вскоре откроются новые фонтаны на реке Дубровенка. </p>
-          <div class="address">📍 Адрес: площадь Ленина, ул. Ленинская, парк Подниколье</div>
-          <div class="detail-images">
-            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2a/0f/f4/ce/caption.jpg?w=500&h=500&s=1" alt="Фонтан Могилёв на площади" loading="lazy">
-            <img src="https://media.magilev.by/gXTAAAAAAADesiVQA8A/photo.webp" alt="Фонтан вечерний Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Река Дубровенка -->
-    <div id="detail-dubrovenka" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Река Дубровенка</h2>
-          <div class="sub">Природный объект • Историческая речка Могилёва</div>
-          <p>Дубровенка — небольшая речка, левый приток Днепра, протекающая через центральную часть Могилёва. Исторически она была важной границей и хозяйственной артерией города. Вдоль её берегов проложены прогулочные аллеи и велодорожки, обустроены зоны отдыха с лавочками и зеленью.</p>
-          <p>Сегодня набережная Дубровенки — одно из любимых мест тихого отдыха горожан. В ближайшем будущем здесь планируется открытие нового музыкального фонтана с световым шоу — проект уже утверждён и обещает превратить Дубровенку в одну из главных вечерних точек притяжения города.</p>
-          <div class="address">📍 Адрес: неподалёку от гостиницы "Могилёв"</div>
-          <div class="detail-images">
-            <img src="https://masheka.by/uploads/posts/2016-08/1470768004_dubrovenka-leto-2016.jpg" alt="Дубровенка лето" loading="lazy">
-            <img src="https://npr.by/wp-content/uploads/2025/07/Maket-fontana-v-Mogileve-u-gostinicy-Mogilev.jpg" alt="Проект фонтана на Дубровенке" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Площадь Славы -->
-    <div id="detail-ploshchad-slavy" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Площадь Славы</h2>
-          <div class="sub">Мемориальный комплекс • Вечный огонь • Курган Славы</div>
-          <p>Площадь Славы — одно из самых значимых мест Могилёва, посвящённое подвигу советских воинов в годы Великой Отечественной войны. В центре площади горит Вечный огонь. Это место — символ мужества и народной памяти, где проходят торжественные церемонии и минуты молчания.</p>
-          <p>История площади неразрывно связана с обороной Могилёва в 1941 году — город 23 дня держал оборону против превосходящих сил вермахта, и память об этих событиях навечно запечатлена в мемориале.</p>
-          <p>Отсюда открывается широкая панорама на город и на реку Днепр. Здесь расположены Могилевский областной краеведческий музей им. Е.Р. Романова и городская Ратуша.</p>
-          <div class="address">📍 Адрес: площадь Славы</div>
-          <div class="detail-images">
-            <img src="https://mogilev.gov.by/images/stories/tour/attractions/Ploshchad-Slavy01.jpg" alt="Площадь Славы Могилёв" loading="lazy">
-            <img src="https://thumb.tildacdn.com/tild6333-6637-4631-b565-393635633164/-/resize/900x/-/format/webp/-01-09-05-2022.jpg" alt="Вечный огонь на площади Славы" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Музей Романова -->
-    <div id="detail-museum-romanov" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Могилёвский областной краеведческий музей им. Е.Р. Романова</h2>
-          <div class="sub">Историко-культурное наследие • Площадь Славы, 1</div>
-          <p>Один из старейших музеев Беларуси, основанный в 1867 году. Носящий имя выдающегося этнографа и археолога Евдокима Романова, музей хранит уникальные коллекции: от археологических находок каменного века до предметов городского быта XIX–XX столетий.</p>
-          <p>Экспозиция размещается в историческом здании на площади Славы. Это главное место для тех, кто хочет понять душу могилёвского края.</p>
-          <div class="address">📍 Адрес: площадь Славы, 1</div>
-          <div class="detail-images">
-            <img src="https://mogilev.gov.by/images/stories/tour/attractions/mus_Romanova01.jpg" alt="Краеведческий музей Могилёв" loading="lazy">
-            <img src="https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/54/e1/07/caption.jpg?w=1200&h=-1&s=1" alt="Музей Романова интерьер" loading="lazy">
-            <img src="https://museums.by/upload/2015/07/0013.jpg" alt="Музей Романова экспонаты" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
-    <!-- Триумфальная арка (расширенное и уточненное описание) -->
-    <div id="detail-triumphal-arch" class="detail-content">
-      <div class="detail-card">
-        <div class="detail-text">
-          <h2>Триумфальная арка</h2>
-          <div class="sub">Неоклассицизм • Открыта в 2018 году • Память о Победе</div>
-          <p>Триумфальная арка в Могилёве — величественный памятник, расположенный при въезде в город со стороны Минска. Она была торжественно открыта 9 октября 2018 года в честь 750-летия Могилёва.</p>
-          <p>Архитектурно арка выполнена в стиле неоклассицизма с элементами сталинского ампира. Её белоснежные колонны и изящный аттик органично вписались в ландшафт Минского шоссе, создавая парадный въезд в областной центр. В вечернее время арка эффектно подсвечивается, что делает её заметной как для водителей, так и для пассажиров.</p>
-          <div class="address">📍 Адрес: Минское шоссе (въезд в город со стороны Минска)</div>
-          <div class="detail-images">
-            <img src="https://admomsk.gosuslugi.ru/netcat_files/556/3239/Triumfal_naya_arka.jpg" alt="Триумфальная арка Могилёв" loading="lazy">
-          </div>
-        </div>
-      </div>
-      <a href="#" class="reset-btn">← Ко всем местам</a>
-    </div>
-
+    <div id="detailsContainer"></div>
   </div>
 
   <footer>
     <p>🏛️ Архитектурный гид по Могилёву</p>
-    <p style="margin-top:0.5rem;font-size:0.7rem;">Кликните на карточку — изменится описание и фон страницы. Исследуйте город через его здания и памятники.</p>
+    <p style="margin-top:0.5rem;font-size:0.7rem;">Кликните на карточку или на метку на карте — изменится описание и фон страницы.</p>
   </footer>
 </div>
+
+<div id="imageModal" class="modal">
+  <span class="modal-close">&times;</span>
+  <img id="modalImage" src="" alt="">
+  <div id="modalCaption" class="modal-caption"></div>
+</div>
+
+<script>
+  // ВСЕ ДАННЫЕ (исправленный год вокзала — 1902)
+  const placesData = [
+    { id: "podnikolie", name: "Парк «Подниколье»", lat: 53.893250, lng: 30.340211, desc: "Покровский посад, более известный в народе как Подниколье, некогда богатый и густонаселённый район города. Это одно из самых древних поселений в Могилеве, известно с 11 века. Живописный парк в пойме Днепра — идеальное место для прогулок, бега и езды на велосипеде. На его территории находится Свято-Никольский монастырь — единственный сохранившийся памятник старины в этом районе. У спуска открываются отличные виды на реку и холмы Могилёва. В центре лестничных пролетов каскадом спускается главный фонтан. Здесь проводятся городские праздники и фестивали.", img: "https://mogilev.gov.by/images/stories/tour/attractions/Podnikole01.jpg", extraImg: "http://vestnikmogileva.by/wp-content/uploads/2020/10/dji_0014.jpg" },
+    { id: "ratusha", name: "Могилёвская Ратуша", lat: 53.894533, lng: 30.332027, desc: "Символ независимости и самоуправления. Магдебургское право было даровано городу в 1577 году королём Стефаном Баторием. Восстановленная ратуша имеет высоту 47 метров вместе со шпилем. В ней расположен музей истории Могилёва. Со смотровой площадки открывается панорама на Днепр и историческую застройку. Построена в 1679 году, разрушена в XX веке и отстроена заново в 2008-м.", img: "https://belarustourist.by/upload/resize_cache/iblock/d76/848_502_2/d768edb3bc13e84d43d81542bd29ff40.jpg" },
+    { id: "museum-romanov", name: "Краеведческий музей им. Романова", lat: 53.895069, lng: 30.329658, desc: "Один из старейших музеев Беларуси, основанный в 1867 году. Носящий имя выдающегося этнографа и археолога Евдокима Романова, музей хранит уникальные коллекции: от археологических находок каменного века до предметов городского быта XIX–XX столетий. Экспозиция размещается в историческом здании на площади Славы. Это главное место для тех, кто хочет понять душу могилёвского края.", img: "https://mogilev.gov.by/images/stories/tour/attractions/mus_Romanova01.jpg", extraImg: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/54/e1/07/caption.jpg?w=1200&h=-1&s=1" },
+    { id: "ploshchad-slavy", name: "Площадь Славы", lat: 53.894038, lng: 30.330295, desc: "Мемориальный комплекс, посвящённый подвигу советских воинов в годы Великой Отечественной войны. В центре площади горит Вечный огонь, а рядом возвышается Курган Славы с монументальной стелой. История площади неразрывно связана с обороной Могилёва в 1941 году — город 23 дня держал оборону против превосходящих сил вермахта. Отсюда открывается широкая панорама на город и Днепр.", img: "https://mogilev.gov.by/images/stories/tour/attractions/Ploshchad-Slavy01.jpg", extraImg: "https://thumb.tildacdn.com/tild6333-6637-4631-b565-393635633164/-/resize/900x/-/format/webp/-01-09-05-2022.jpg" },
+    { id: "theatre", name: "Могилёвский драмтеатр", lat: 53.897532, lng: 30.333300, desc: "Ярчайший пример авангардной архитектуры в Беларуси. Здание с уникальной авансценой и акустической раковиной спроектировано в духе позднего конструктивизма. На этой сцене в 1941 году выступали фронтовые бригады. После реставрации театр обрёл первоначальный облик. Сегодня здесь ставят классику и современные спектакли.", img: "https://img.belta.by/images/storage/news/with_archive/2020/000027_1583994665_382947_big.jpg", extraImg: "https://vetliva.ru/upload/resize_cache/iblock/0d3/630_350_2/0d38efebcb0147ed7f201457495a32ed.jpg" },
+    { id: "dama", name: "Скульптура «Дама с собачкой»", lat: 53.897718, lng: 30.332946, desc: "Изысканная бронзовая скульптура у входа в драмтеатр — одна из самых фотографируемых достопримечательностей Могилёва. Изящная дама в длинном платье с маленькой собачкой на поводке стала любимицей горожан и гостей города. Скульптура органично дополняет архитектурный ансамбль театра и придаёт ему особый шарм. Её часто натирают на удачу — блестящие места на носу дамы и спинке собачки тому подтверждение.", img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/9e/14/91/caption.jpg" },
+    { id: "kostel", name: "Костел Святого Станислава", lat: 53.898461, lng: 30.334065, desc: "Старейший католический храм Могилёва, подлинный шедевр виленского барокко. Барочные алтари, лепнина, фрески и скульптуры создают гармоничное пространство. Органные концерты привлекают ценителей классической музыки со всей страны. Костел пережил пожар и закрытие при советской власти, но вновь распахнул двери в 1990-х.", img: "https://planetabelarus.by/upload/resize_cache/iblock/2ac/1330_887_18e21fe612b4afb807a26ecc22279a1d9/2ac1b92a8d074f7e304b8da2bd8b165c.jpg", extraImg: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/29/cb/98/f1/caption.jpg?w=900&h=500&s=1" },
+    { id: "fontany", name: "Фонтаны Могилёва", lat: 53.902380, lng: 30.337022, desc: "Могилёв по праву гордится своими фонтанами — от элегантных классических до ультрасовременных светомузыкальных. Главный каскадный фонтан на улице Первомайской вечером превращается в захватывающее шоу с разноцветной подсветкой и динамической сменой струй. В летние выходные здесь проходят музыкальные перформансы. Современный фонтанный комплекс у ТЦ «Атриум» стал новым центром притяжения: водные завесы, тактильные инсталляции и зоны отдыха.", img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2a/0f/f4/ce/caption.jpg", extraImg: "https://media.magilev.by/gXTAAAAAAADesiVQA8A/photo.webp" },
+    { id: "atrium", name: "ТЦ «Атриум»", lat: 53.904326, lng: 30.339551, desc: "Одно из самых популярных общественных пространств в центре Могилёва. Гигантский стеклянный купол заливает галереи естественным светом. Магазины, фуд-корт, кинотеатр и зоны отдыха. Прилегающая площадь украшена современным фонтаном, который дарит прохладу в летний зной и создаёт праздничную атмосферу.", img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1a/bf/53/c0/caption.jpg", extraImg: "https://linzomatik.by/wp-content/uploads/2021/07/img_1670_compressed.jpg" },
+    { id: "zvezdochet", name: "Статуя «Звездочёт»", lat: 53.902319, lng: 30.340769, desc: "Бронзовый астроном в старинном плаще всматривается в небо через подзорную трубу на пешеходной Ленинской — символ стремления к знаниям и мечтам. Говорят, если потереть трубу и загадать желание, оно обязательно сбудется. Это одна из самых популярных скульптур среди туристов.", img: "https://upload.wikimedia.org/wikipedia/ru/4/4e/%D0%9F%D0%B0%D0%BC%D1%8F%D1%82%D0%BD%D0%B8%D0%BA_%D0%97%D0%B2%D0%B5%D0%B7%D0%B4%D0%BE%D1%87%D1%91%D1%82%D1%83_%D0%B2_%D0%9C%D0%BE%D0%B3%D0%B8%D0%BB%D1%91%D0%B2%D0%B5.JPG", extraImg: "https://storage.yandexcloud.net/storage.yasno.media/nat-geo/images/2022/5/13/6cdd6dd98b2740a6a243aa62824341f3.max-2500x1500.jpg" },
+    { id: "dvorec", name: "Музей Масленникова", lat: 53.908146, lng: 30.338461, desc: "Художественный музей в бывшем Архиерейском дворце, построенном в конце XIX — начале ХХ века. Здание сочетает в себе черты стилей модерн, псевдорусского и позднего классицизма. В коллекции — более 10 000 произведений: иконопись XVII–XIX веков, живопись, графика и белорусский авангард. Интересный факт: музей изображён на белорусской купюре номиналом 200 рублей.", img: "https://media.magilev.by/gROwAAAAAACpzSBDhUY/photo.webp", extraImg: "https://avatars.mds.yandex.net/get-altay/9663145/2a00000189c5b8dd8e41fc1538bffe80f5fa/orig", extraImg2: "https://mogilevmuseum.by/wp-content/uploads/2026/01/maslennikov-23.jpg", extraImg3: "https://my-places.by/_next/image?url=https%3A%2F%2Fstorage.googleapis.com%2Fmy-places-bucket-1%2Fimages%2F2023-10-28-1720796100673.webp&w=3840&q=75" },
+    // ВОКЗАЛ — год открытия 1902
+    { id: "vokzal", name: "Железнодорожный вокзал Могилёва", lat: 53.926366, lng: 30.338706, desc: "Главные ворота города, построенные в 1902 году в стиле эклектики с элементами модерна. Высокий шпиль, барельефы железнодорожников и мозаичное панно создают образ вокзала как архитектурного памятника. Здание является историко-культурной ценностью и одним из символов города.", img: "https://mogilove.by/wp-content/uploads/2023/11/vokzal_01.jpg", extraImg: "https://mogilev.biz/netcat_files/2698/3645/15_v_sc.png" },
+    { id: "sobor", name: "Собор Трёх Святителей", lat: 53.911081, lng: 30.341584, desc: "Величественный собор в неорусском стиле, построенный в 1903–1913 годах в память о чудесном спасении императора Александра III. Освящён в честь трёх Вселенских учителей: Василия Великого, Григория Богослова и Иоанна Златоуста. Внутри — уникальный фарфоровый иконостас (редчайший в православном мире), богато декорированный резьбой. Сохранился оригинальный керамический пол храма.", img: "http://sobormogilev.by/wp-content/uploads/2024/12/IMG_7642-768x1024.jpeg", extraImg: "https://avatars.mds.yandex.net/get-altay/1363018/2a000001642ab5792312b5051caf79cd9b0a/L_height" },
+    { id: "lenin-statue", name: "Памятник Ленину", lat: 53.909432, lng: 30.343061, desc: "Один из самых узнаваемых монументов Могилёва, установленный перед облисполкомом на главной площади города. Бронзовая фигура вождя мирового пролетариата торжественно открыта в 1957 году. Вместе с гранитным постаментом достигает 11 метров. Площадь Ленина — место проведения парадов, митингов и городских торжеств. Интересный факт: в конце 1930-х годов существовал проект переноса столицы БССР из Минска в Могилёв, что подчёркивает стратегическое значение города.", img: "https://avatars.mds.yandex.net/get-altay/2402012/2a00000172dfebe201f5eb6d58671951ed9f/L_height", extraImg: "https://mogilev.in/source/photos/app/b_c291cmNlL3Bob3Rvcy8yMDE4LzA1LzA4L2RzYy02NzM3LmpwZw==_640_aebfd393c2.jpg" },
+    { id: "leninskaya", name: "Улица Ленинская", lat: 53.902063, lng: 30.340564, desc: "Главная пешеходная артерия города протяжённостью около 1,5 км. Центральная пешеходная улица с кафе, магазинами, музыкантами и арт-объектами. Старинные здания с лепниной XIX–XX веков создают неповторимый колорит. Обязательно найдите «Звездочёта» и другие скульптуры. Вечером улица преображается в мягкой подсветке гирлянд.", img: "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/2b/51/08/76/caption.jpg" },
+    { id: "dubrovenka", name: "Река Дубровенка", lat: 53.912124, lng: 30.330202, desc: "Дубровенка — небольшая речка, левый приток Днепра, протекающая через центральную часть Могилёва. Исторически она была важной границей и хозяйственной артерией города. Вдоль её берегов проложены прогулочные аллеи и велодорожки, обустроены зоны отдыха с лавочками и зеленью. В планах — открытие нового музыкального фонтана с световым шоу, который превратит Дубровенку в одну из главных вечерних точек притяжения.", img: "https://masheka.by/uploads/posts/2016-08/1470768004_dubrovenka-leto-2016.jpg", extraImg: "https://npr.by/wp-content/uploads/2025/07/Maket-fontana-v-Mogileve-u-gostinicy-Mogilev.jpg" },
+    { id: "triumphal-arch", name: "Триумфальная арка", lat: 53.936547, lng: 30.250006, desc: "Величественный памятник, расположенный при въезде в город со стороны Минска. Торжественно открыта 9 октября 2018 года в честь 750-летия Могилёва. Архитектурно арка выполнена в стиле неоклассицизма с элементами сталинского ампира. Её белоснежные колонны и изящный аттик органично вписались в ландшафт Минского шоссе, создавая парадный въезд в областной центр. В вечернее время арка эффектно подсвечивается.", img: "https://admomsk.gosuslugi.ru/netcat_files/556/3239/Triumfal_naya_arka.jpg" },
+    { id: "pushkin", name: "Памятник Пушкину и Кот учёный", lat: 53.880388, lng: 30.337375, desc: "Скульптурная композиция в сквере на пересечении улиц Крупской и Челюскинцев. Александр Сергеевич Пушкин изображён вместе со знаменитым Котом учёным из поэмы «Руслан и Людмила». Кот, сидящий на массивной цепи, символизирует мудрость и сказочность. Быстро ставшая популярной у горожан и гостей города достопримечательность.", img: "https://avatars.mds.yandex.net/get-altay/6302373/2a000001812f416fbf7834b05b74a96f4afa/L_height", extraImg: "https://mogilev.biz/netcat_files/2582/3512/ghfctrhtrjhrtjurtjxrt99.jpg" },
+    { id: "attractions", name: "Парк аттракционов", lat: 53.888161, lng: 30.329242, desc: "Центральный парк культуры и отдыха — любимое место семейного досуга могилёвчан. Американские горки, автодром, карусели, батуты и многочисленные игровые автоматы. Для самых маленьких оборудованы безопасные игровые зоны. Работают кафе и точки с мороженым. Парк особенно оживлён в выходные и праздничные дни.", img: "https://avatars.mds.yandex.net/get-altay/14085323/2a0000019785097232665dde4f304d47a480/orig", extraImg: "https://mogilev.biz/netcat_files/2698/3645/24_3.png" },
+    { id: "svyatoe-lake", name: "Святое озеро (пляж)", lat: 53.861162, lng: 30.320967, desc: "Популярное место летнего отдыха на юго-западной окраине Могилёва. Оборудованный песчаный пляж с шезлонгами и зонтиками, лодочная станция, кафе и зоны для пикников. Озеро карстового происхождения, славится чистой водой и живописными берегами. Отличный вариант для купания и спокойного отдыха на природе.", img: "https://planetabelarus.by/upload/resize_cache/iblock/e46/1330_747_18e21fe612b4afb807a26ecc22279a1d9/e4613f88267574aac0685c4a116713c7.jpg", extraImg: "https://mogilev.in/source/photos/app/b_c291cmNlL3Bob3Rvcy8yMDI2LzA2LzA0L3BseWFqLXN2eWF0b2dvLW96ZXJhLmpwZw==_640_8fef8c9f00.jpg" }
+  ];
+
+  // Генерация детальных блоков
+  const detailsContainer = document.getElementById('detailsContainer');
+  placesData.forEach(place => {
+    const detailDiv = document.createElement('div');
+    detailDiv.id = `detail-${place.id}`;
+    detailDiv.className = 'detail-content';
+    let imagesHtml = `<img src="${place.img}" alt="${place.name}" loading="lazy">`;
+    if (place.extraImg) imagesHtml += `<img src="${place.extraImg}" alt="${place.name} 2" loading="lazy">`;
+    if (place.extraImg2) imagesHtml += `<img src="${place.extraImg2}" alt="${place.name} 3" loading="lazy">`;
+    if (place.extraImg3) imagesHtml += `<img src="${place.extraImg3}" alt="${place.name} 4" loading="lazy">`;
+    detailDiv.innerHTML = `
+      <div class="detail-card">
+        <div class="detail-text">
+          <h2>${place.name}</h2>
+          <div class="sub"></div>
+          <p>${place.desc}</p>
+          <div class="detail-images">${imagesHtml}</div>
+        </div>
+      </div>
+      <a href="#" class="reset-btn">← Ко всем местам</a>
+    `;
+    detailsContainer.appendChild(detailDiv);
+  });
+
+  // Яндекс Карта
+  ymaps.ready(init);
+  function init() {
+    const map = new ymaps.Map("yandex-map", {
+      center: [53.90, 30.33],
+      zoom: 13,
+      controls: ["zoomControl", "fullscreenControl"]
+    });
+
+    placesData.forEach(place => {
+      const placemark = new ymaps.Placemark([place.lat, place.lng], {
+        balloonContent: `<b>${place.name}</b><br><i>Кликните для деталей</i>`,
+        hintContent: place.name
+      }, {
+        preset: 'islands#goldIcon',
+        openBalloonOnClick: false
+      });
+      
+      placemark.events.add('click', () => {
+        window.location.hash = `detail-${place.id}`;
+      });
+      
+      map.geoObjects.add(placemark);
+    });
+  }
+
+  // Модалка для фото
+  const modal = document.getElementById('imageModal');
+  const modalImg = document.getElementById('modalImage');
+  const modalCaption = document.getElementById('modalCaption');
+  const closeBtn = document.querySelector('.modal-close');
+
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'IMG' && e.target.closest('.detail-images')) {
+      modal.classList.add('active');
+      modalImg.src = e.target.src;
+      modalCaption.textContent = e.target.alt || '';
+    }
+  });
+  closeBtn.addEventListener('click', () => modal.classList.remove('active'));
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') modal.classList.remove('active'); });
+</script>
 </body>
 </html>
